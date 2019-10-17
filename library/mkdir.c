@@ -14,13 +14,8 @@ Each includes the name of the directory and its modification time; the number of
 and, for each entry, the block number (blockID) of each subdirectory or file.*/
 int SIFS_mkdir(const char *volumename, const char *pathname)
 {
+    int cnt; 
 
-    int number_block_entries = 0;
-    int cnt; //count
-
-    uint32_t new_dir_blk_id;
-
-    SIFS_errno = SIFS_EOK;
     //ENSURE THAT RECEIVED PARAMETERS ARE VALID
     if (volumename == NULL || pathname == NULL)
     {
@@ -46,64 +41,52 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
     printf("Header Nblocks %i\n", header.nblocks);
 
     SIFS_BIT bitmap[header.nblocks];
+
     fread(bitmap, sizeof bitmap, 1, vol); // reads vol into bitmap
     for (int i = 0; i < header.nblocks; i++)
         printf("%c ", bitmap[i]);
     printf("\n");
 
-
     //Root Directory 
     SIFS_DIRBLOCK rootdir_block;
+    fread(&rootdir_block, sizeof rootdir_block, 1, vol);
 
-    //fseek to parent directory
-    fread(&rootdir_block, sizeof(SIFS_DIRBLOCK), 1, vol);
-    
+    rootdir_block.nentries = rootdir_block.nentries + 1;
+     
+    printf("rootdir_block.entries: %i\n", rootdir_block.nentries);
 
-    for(int i = 0; i < rootdir_block.nentries; i++){
-        printf("ROOT_Entry: %i", rootdir_block.entries[i].blockID); //entry not put in command? 
-        number_block_entries ++; 
-        
-    }
-    printf("ROOT_Entry2: %i\n", rootdir_block.entries[0].blockID);
-
+    // first unassigned block ID sent to rootdir nentries
     for (cnt = 0; cnt < header.nblocks; cnt++)
         if (bitmap[cnt] == SIFS_UNUSED) { //If block is u then create a new dir
-            new_dir_blk_id = cnt; //assign new directory entries ID
-            printf("Count2: %i\n", cnt);
+            rootdir_block.nentries = cnt; //assign new directory entries ID
+            printf("Bitmap ID (Latest): %i\n", cnt);
             break;
         }
-        printf("Count1: %i\n", cnt);
-
+    //Check if volume is full
     if (cnt == header.nblocks) {
         //set SISF_ERRNO to indicate no unused blocks in volume
         SIFS_errno = SIFS_ENOSPC;
         return 1;
     }
+    //Volumename set to rootdir_block.name
+    strcpy(rootdir_block.name, volumename);
+    printf("DIRNAME:%s\n", rootdir_block.name);
 
     //Assign the block d for Directory
     bitmap[cnt] = SIFS_DIR;
-
-    printf("RootDir_Nentries1: %i\n", rootdir_block.nentries);
-    //rootdir_blk.entries[rootdir_blk.nentries] = new_dir_blk_id;
-    rootdir_block.nentries = new_dir_blk_id; //nentries is the entries ID 
-    
-    rootdir_block.nentries++; //Increase count of nentries 
-    printf("RootDir_Nentries2: %i\n", rootdir_block.nentries);
 
     char		oneblock[header.blocksize];
 
     memset(&rootdir_block, 0, sizeof rootdir_block);	// cleared to all zeroes
     
-    rootdir_block.name[rootdir_block.nentries] = *volumename; 
-    rootdir_block.modtime = time(NULL);
+    printf("CNT:%i\n", cnt);
+    //rootdir_block.name = ; 
+    //rootdir_block.modtime = time(NULL);
     //rootdir_blk.entries[] =  rootdir_blk.entries[number_block_entries];
-    rootdir_block.nentries = 5;
+    rootdir_block.nentries = cnt;
 
     memset(oneblock, 0, sizeof oneblock); //set oneblock to 0's
-    memcpy(oneblock, &rootdir_block, sizeof rootdir_block);
-    
-
-    printf("cnt: %i\n", cnt);
+    //memcpy(oneblock, &rootdir_block, sizeof rootdir_block);
     
     //  WRITE ALL OF THE INITIALISED SECTIONS TO THE VOLUME
     fseek(vol, sizeof header, SEEK_SET); //move up position to start of bitmap
@@ -116,7 +99,7 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
     }
 //  FINISHED, CLOSE THE VOLUME
     fclose(vol);
-    
     //  AND RETURN INDICATING SUCCESS
+    SIFS_errno = SIFS_EOK;
     return 0;
 }
