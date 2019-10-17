@@ -22,6 +22,6 @@ $(LIBRARY):
 
 
 clean:
-	rm -f $(LIBRARY) $(APPLICATIONS) test
+	rm -f $(LIBRARY) $(APPLICATIONS) test 
 	make -C library clean
 

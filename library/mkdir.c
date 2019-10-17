@@ -14,7 +14,8 @@ Each includes the name of the directory and its modification time; the number of
 and, for each entry, the block number (blockID) of each subdirectory or file.*/
 int SIFS_mkdir(const char *volumename, const char *pathname)
 {
-    int cnt; 
+    SIFS_BLOCKID blockID;
+    
 
     //ENSURE THAT RECEIVED PARAMETERS ARE VALID
     if (volumename == NULL || pathname == NULL)
@@ -32,13 +33,9 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
         SIFS_errno = SIFS_ENOVOL;
         return 1;
     }
-    
-    //int var1;
 
     SIFS_VOLUME_HEADER header;             // we need to initialise a new structure
     fread(&header, sizeof header, 1, vol); // read the contents of just the header
-    printf("Header Blocksize:%zu\n", header.blocksize);
-    printf("Header Nblocks %i\n", header.nblocks);
 
     SIFS_BIT bitmap[header.nblocks];
 
@@ -47,56 +44,63 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
         printf("%c ", bitmap[i]);
     printf("\n");
 
+    fread(&blockID, sizeof blockID,1,vol);
     //Root Directory 
+    
     SIFS_DIRBLOCK rootdir_block;
     fread(&rootdir_block, sizeof rootdir_block, 1, vol);
 
-    rootdir_block.nentries = rootdir_block.nentries + 1;
-     
-    printf("rootdir_block.entries: %i\n", rootdir_block.nentries);
-
     // first unassigned block ID sent to rootdir nentries
-    for (cnt = 0; cnt < header.nblocks; cnt++)
-        if (bitmap[cnt] == SIFS_UNUSED) { //If block is u then create a new dir
-            rootdir_block.nentries = cnt; //assign new directory entries ID
-            printf("Bitmap ID (Latest): %i\n", cnt);
+    for (blockID = 0; blockID < header.nblocks; blockID++)
+        if (bitmap[blockID] == SIFS_UNUSED) { //If block is u then create a new dir
+            rootdir_block.nentries = blockID; //assign new directory entries ID
+            printf("Bitmap ID (Latest): %i\n", blockID);
+            printf("Bitmap ID (Latest): %i\n", bitmap[blockID]);
             break;
         }
+        printf("Bitmap ID (Latest): %i\n", blockID);
+
     //Check if volume is full
-    if (cnt == header.nblocks) {
+    if (blockID == header.nblocks) {
         //set SISF_ERRNO to indicate no unused blocks in volume
         SIFS_errno = SIFS_ENOSPC;
         return 1;
     }
-    //Volumename set to rootdir_block.name
-    strcpy(rootdir_block.name, volumename);
-    printf("DIRNAME:%s\n", rootdir_block.name);
-
     //Assign the block d for Directory
-    bitmap[cnt] = SIFS_DIR;
+    bitmap[blockID] = SIFS_DIR;
+
+    // New Directory 
+    SIFS_DIRBLOCK newdir_block;
+    //char volname;
+    fread(&newdir_block, sizeof newdir_block, 1, vol);
+
+    //Volumename set to rootdir_block.name
+    strcpy(newdir_block.name, volumename);
+    printf("DIRNAME:%s\n", newdir_block.name);
+
+    //newdir_block.name[32] = volname;
+    //newdir_block.nentries = blockID;
 
     char		oneblock[header.blocksize];
 
-    memset(&rootdir_block, 0, sizeof rootdir_block);	// cleared to all zeroes
-    
-    printf("CNT:%i\n", cnt);
-    //rootdir_block.name = ; 
-    //rootdir_block.modtime = time(NULL);
-    //rootdir_blk.entries[] =  rootdir_blk.entries[number_block_entries];
-    rootdir_block.nentries = cnt;
+    //memset(&rootdir_block, 0, sizeof rootdir_block);	// cleared to all zeroes
+
+    printf("Bitmap ID4 (Latest): %i\n", blockID);
+    rootdir_block.modtime = time(NULL);
+    rootdir_block.entries[blockID].blockID = blockID;
+    rootdir_block.nentries = blockID;
+ printf("Bitmap ID5 (Latest): %i\n", blockID);
 
     memset(oneblock, 0, sizeof oneblock); //set oneblock to 0's
-    //memcpy(oneblock, &rootdir_block, sizeof rootdir_block);
+    memcpy(oneblock, &rootdir_block, sizeof rootdir_block);
     
     //  WRITE ALL OF THE INITIALISED SECTIONS TO THE VOLUME
     fseek(vol, sizeof header, SEEK_SET); //move up position to start of bitmap
     fwrite(bitmap, sizeof bitmap, 1, vol); //write bitmap onto vol
 
     fwrite(oneblock, sizeof oneblock, 1, vol);	// write rootdir to the disk or vol
-    memset(oneblock, 0, sizeof oneblock);	// reset to all zeroes 
-    for(int b=1 ; b< header.nblocks ; ++b) {
-        fwrite(oneblock, sizeof oneblock, 1, vol); //write to disk
-    }
+    //memset(oneblock, 0, sizeof oneblock);	// reset to all zeroes 
+
 //  FINISHED, CLOSE THE VOLUME
     fclose(vol);
     //  AND RETURN INDICATING SUCCESS
