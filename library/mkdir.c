@@ -78,8 +78,6 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
         return 1;
     }
 
-    //fwrite(new_dir_blk_id, sizeof cnt, 1, vol); 
-
     //Assign the block d for Directory
     bitmap[cnt] = SIFS_DIR;
 
@@ -123,12 +121,10 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
 
             int rootdir_entries = rootdir_info.nentries; //number of rootdir_entries = entries in rootdir 
             rootdir_info.entries[rootdir_entries].blockID = var1; // var1 is the assigned BlockID
-
- 
-            newdir_block.name[i] = *volumename;
-            newdir_block.modtime = time(NULL);
-            newdir_block.nentries = newdir_block.nentries + 1 ; // later need to change foer each entry the block n ID of each subdir or file
             */
+
+           //fwrite(new_dir_blk_id, sizeof cnt, 1, vol);
+           printf("ROOT_NEntry: %i\n", cnt);
     char		oneblock[header.blocksize];
     //  WRITE ALL OF THE INITIALISED SECTIONS TO THE VOLUME
     fwrite(&header, sizeof header, 1, vol);
@@ -136,10 +132,12 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
     fseek(vol, sizeof header, SEEK_SET); //move up position to start of bitmap
     fwrite(bitmap, sizeof bitmap, 1, vol); 
 
-    fwrite(oneblock, sizeof oneblock, 1, vol);	// write rootdir
-    memset(oneblock, 0, sizeof oneblock);	// reset to all zeroes
+    memcpy(oneblock, new_dir_blk_id, uint32_t );
+
+    fwrite(oneblock, sizeof oneblock, 1, vol);	// write rootdir to the disk or vol
+    memset(oneblock, 0, sizeof oneblock);	// reset to all zeroes 
     for(int b=1 ; b< header.nblocks ; ++b) {
-        fwrite(oneblock, sizeof oneblock, 1, vol);
+        fwrite(oneblock, sizeof oneblock, 1, vol); //write to disk
     }
 
     fclose(vol);
