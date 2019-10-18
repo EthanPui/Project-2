@@ -23,3 +23,4 @@ $(LIBRARY):	$(OBJECTS)
 
 clean:
 	rm -f $(LIBRARY) $(OBJECTS)
+

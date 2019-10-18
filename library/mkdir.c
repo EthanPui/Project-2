@@ -73,7 +73,6 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
         if(pathname[i] == '/'){
             fread(&parentdir_block, sizeof parentdir_block, 1, vol);
             strcpy(parentdir_block.name, pathname);
-            printf("DIRNAME:%s\n", parentdir_block.name);
             parentdir_block.modtime = time(NULL);
         }
     }
@@ -97,7 +96,6 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
             for (int i = 0; i < header.nblocks; i++){
                 if (bitmap[i+2] == SIFS_UNUSED) { 
                     rootdir_block.entries[parentdir_block.nentries].blockID = i;
-                    //parentdir_block.entries[rootdir_block.nentries].blockID = i;
                     strcpy(parentdir_block.name, pathname);
                     parentdir_block.modtime = time(NULL);
                     rootdir_block.entries[i].blockID = (i + 1);
@@ -118,11 +116,9 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
     fwrite(oneblock, sizeof oneblock, 1, vol);	// write rootdir to the disk or vol
 
     //write in the parentdir_block info
-    printf("parentfir_block nentries %i\n", parentdir_block.nentries);
-    printf("rootdir_block nentries %i\n", rootdir_block.nentries);
 
-    //fseek(vol, sizeof ( header.blocksize * rootdir_block.nentries),SEEK_CUR);
     memcpy(oneblock, &parentdir_block, sizeof rootdir_block);
+    fseek(vol, blockID * header.blocksize + sizeof header + sizeof bitmap, SEEK_SET);
     fwrite(oneblock, sizeof oneblock, 1, vol);
     memset(oneblock, 0, sizeof oneblock);	// reset to all zeroes 
 
