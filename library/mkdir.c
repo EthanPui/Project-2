@@ -108,7 +108,6 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
         }
 
     char		oneblock[header.blocksize];
-    //memset(&rootdir_block, 0, sizeof rootdir_block);	// cleared to all zeroes
     memset(oneblock, 0, sizeof oneblock); //set oneblock to 0's
     memcpy(oneblock, &rootdir_block, sizeof rootdir_block);
     
@@ -119,7 +118,6 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
     fwrite(oneblock, sizeof oneblock, 1, vol);	// write rootdir to the disk or vol
 
     //write in the parentdir_block info
-    //fseek(vol, sizeof (header.blocksize * blockID) ,SEEK_CUR);
     printf("parentfir_block nentries %i\n", parentdir_block.nentries);
     printf("rootdir_block nentries %i\n", rootdir_block.nentries);
 
