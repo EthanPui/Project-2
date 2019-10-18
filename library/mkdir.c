@@ -40,11 +40,8 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
     SIFS_BIT bitmap[header.nblocks];
 
     fread(bitmap, sizeof bitmap, 1, vol); // reads vol into bitmap
-    for (int i = 0; i < header.nblocks; i++)
 
     fread(&blockID, sizeof blockID,1,vol);
-    
- 
     
     SIFS_DIRBLOCK rootdir_block;
     SIFS_DIRBLOCK parentdir_block;
@@ -81,14 +78,13 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
         }
     }
     
-    for (blockID = 0; blockID < header.nblocks; blockID++)
+    for (blockID = 0; blockID < header.nblocks; blockID++){
          if (bitmap[blockID] == SIFS_UNUSED) { //If block is u then create a new dir
              rootdir_block.nentries = blockID; //assign new directory entries ID
              bitmap[blockID] = SIFS_DIR;
              break;
          }
-
-        printf("BlockID1:%i\n", blockID);
+    }
         if (blockID == 1)
         { 
             rootdir_block.modtime = time(NULL);
@@ -110,6 +106,7 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
                 } 
             }
         }
+
     char		oneblock[header.blocksize];
     //memset(&rootdir_block, 0, sizeof rootdir_block);	// cleared to all zeroes
     memset(oneblock, 0, sizeof oneblock); //set oneblock to 0's
@@ -123,6 +120,10 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
 
     //write in the parentdir_block info
     //fseek(vol, sizeof (header.blocksize * blockID) ,SEEK_CUR);
+    printf("parentfir_block nentries %i\n", parentdir_block.nentries);
+    printf("rootdir_block nentries %i\n", rootdir_block.nentries);
+
+    //fseek(vol, sizeof ( header.blocksize * rootdir_block.nentries),SEEK_CUR);
     memcpy(oneblock, &parentdir_block, sizeof rootdir_block);
     fwrite(oneblock, sizeof oneblock, 1, vol);
     memset(oneblock, 0, sizeof oneblock);	// reset to all zeroes 
