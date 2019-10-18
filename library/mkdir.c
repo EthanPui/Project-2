@@ -54,11 +54,11 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
     for (blockID = 0; blockID < header.nblocks; blockID++)
         if (bitmap[blockID] == SIFS_UNUSED) { //If block is u then create a new dir
             rootdir_block.nentries = blockID; //assign new directory entries ID
-            printf("Bitmap ID (Latest): %i\n", blockID);
-            printf("Bitmap ID (Latest): %i\n", bitmap[blockID]);
+            printf("BlockID: %i\n", blockID);
+            printf("Bitmap[BlockID]: %i\n", bitmap[blockID]);
             break;
         }
-        printf("Bitmap ID (Latest): %i\n", blockID);
+        printf("BlockID after : %i\n", blockID);
 
     //Check if volume is full
     if (blockID == header.nblocks) {
@@ -74,11 +74,10 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
     //char volname;
     fread(&newdir_block, sizeof newdir_block, 1, vol);
 
-    //Volumename set to rootdir_block.name
-    strcpy(newdir_block.name, volumename);
+    //new Directory name set to rootdir_block.name
+    strcpy(newdir_block.name, pathname);
     printf("DIRNAME:%s\n", newdir_block.name);
-
-    //newdir_block.name[32] = volname;
+    newdir_block.modtime = time(NULL);
     //newdir_block.nentries = blockID;
 
     char		oneblock[header.blocksize];
@@ -87,18 +86,23 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
 
     printf("Bitmap ID4 (Latest): %i\n", blockID);
     rootdir_block.modtime = time(NULL);
-    rootdir_block.entries[blockID].blockID = blockID;
+    rootdir_block.entries[0].blockID = blockID;
     rootdir_block.nentries = blockID;
  printf("Bitmap ID5 (Latest): %i\n", blockID);
 
     memset(oneblock, 0, sizeof oneblock); //set oneblock to 0's
     memcpy(oneblock, &rootdir_block, sizeof rootdir_block);
     
+    
     //  WRITE ALL OF THE INITIALISED SECTIONS TO THE VOLUME
     fseek(vol, sizeof header, SEEK_SET); //move up position to start of bitmap
     fwrite(bitmap, sizeof bitmap, 1, vol); //write bitmap onto vol
 
     fwrite(oneblock, sizeof oneblock, 1, vol);	// write rootdir to the disk or vol
+
+    //write in the new_dirblock info
+    memcpy(oneblock, &newdir_block, sizeof rootdir_block);
+    fwrite(oneblock, sizeof oneblock, 1, vol);
     //memset(oneblock, 0, sizeof oneblock);	// reset to all zeroes 
 
 //  FINISHED, CLOSE THE VOLUME
