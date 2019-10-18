@@ -18,7 +18,7 @@
 
 typedef struct {
     size_t		blocksize;
-    uint32_t		nblocks;
+    uint32_t	nblocks;
 } SIFS_VOLUME_HEADER;
 
 typedef char		SIFS_BIT;	// SIFS_UNUSED, SIFS_DIR, ...

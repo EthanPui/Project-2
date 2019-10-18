@@ -41,8 +41,8 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
 
     fread(bitmap, sizeof bitmap, 1, vol); // reads vol into bitmap
     for (int i = 0; i < header.nblocks; i++)
-        printf("%c ", bitmap[i]);
-    printf("\n");
+        //printf("%c ", bitmap[i]);
+    //printf("\n");
 
     fread(&blockID, sizeof blockID,1,vol);
     //Root Directory 
@@ -54,11 +54,11 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
     for (blockID = 0; blockID < header.nblocks; blockID++)
         if (bitmap[blockID] == SIFS_UNUSED) { //If block is u then create a new dir
             rootdir_block.nentries = blockID; //assign new directory entries ID
-            printf("BlockID: %i\n", blockID);
-            printf("Bitmap[BlockID]: %i\n", bitmap[blockID]);
+            //printf("BlockID: %i\n", blockID);
+            //printf("Bitmap[BlockID]: %i\n", bitmap[blockID]);
             break;
         }
-        printf("BlockID after : %i\n", blockID);
+        //printf("BlockID after : %i\n", blockID);
 
     //Check if volume is full
     if (blockID == header.nblocks) {
@@ -71,25 +71,48 @@ int SIFS_mkdir(const char *volumename, const char *pathname)
 
     // New Directory 
     SIFS_DIRBLOCK newdir_block;
-    //char volname;
-    fread(&newdir_block, sizeof newdir_block, 1, vol);
 
-    //new Directory name set to rootdir_block.name
-    strcpy(newdir_block.name, pathname);
-    printf("DIRNAME:%s\n", newdir_block.name);
-    newdir_block.modtime = time(NULL);
-    //newdir_block.nentries = blockID;
+    //Pathname 
+    char path[sizeof(pathname)];
+    strcpy(path,pathname);
+    const char s[2] = "/";
+    char *token;
 
+    /* get the first token */
+    token = strtok(path, s);
+
+    /* walk through other tokens */
+    while( token != NULL ) {
+        printf( " %s\n", token );
+
+        token = strtok(NULL, s);
+    }
+    
+
+
+    
+        //Root case need its own nentries and BlockID and no Name
+        if (blockID == 1)
+        { 
+            rootdir_block.modtime = time(NULL);
+            rootdir_block.entries[0].blockID = blockID;
+            rootdir_block.nentries = blockID;
+
+            fread(&newdir_block, sizeof newdir_block, 1, vol);
+            newdir_block.modtime = time(NULL);
+            strcpy(newdir_block.name, pathname);
+        }else
+        {
+            fread(&newdir_block, sizeof newdir_block, 1, vol);
+            //New Directory created
+            strcpy(newdir_block.name, pathname);
+            printf("DIRNAME:%s\n", newdir_block.name);
+            newdir_block.modtime = time(NULL);
+            //newdir_block.nentries = blockID;
+            //newdir_block.entries[0].blockID = blockID ;
+        }
     char		oneblock[header.blocksize];
-
     //memset(&rootdir_block, 0, sizeof rootdir_block);	// cleared to all zeroes
-
-    printf("Bitmap ID4 (Latest): %i\n", blockID);
-    rootdir_block.modtime = time(NULL);
-    rootdir_block.entries[0].blockID = blockID;
-    rootdir_block.nentries = blockID;
- printf("Bitmap ID5 (Latest): %i\n", blockID);
-
     memset(oneblock, 0, sizeof oneblock); //set oneblock to 0's
     memcpy(oneblock, &rootdir_block, sizeof rootdir_block);
     
