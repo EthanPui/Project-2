@@ -17,6 +17,6 @@ Tasks
 - [ ] readfile.c
 - [ ] fileinfo.c
   
-- [ ] Complie Code :+1:
+- [ ] Compile Code :+1:
 - [ ] Clean Up Code :shipit:
 
